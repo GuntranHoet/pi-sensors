@@ -1,6 +1,9 @@
 # set base image (host OS)
 FROM python:3
 
+LABEL maintainer="GunTheHuman"
+LABEL build_version="0.1"
+
 # set the working directory in the container
 WORKDIR /usr/docker/pi-sensors
 
