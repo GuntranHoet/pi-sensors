@@ -12,6 +12,9 @@ env_broker = os.environ['BROKER'] # static IP or localhost
 env_user = os.environ['USERNAME']
 env_pass = os.environ['PASSWORD']
 
+env_qos = int(os.environ['QOS'])
+env_cpu_temp_topic = os.environ['CPU_TEMP_TOPIC']
+
 ##########################
 ## function definitions ##
 ##########################
@@ -28,12 +31,8 @@ def on_connect(client, userdata, flags, rc):
 def on_disconnect(client, userdata, flags, rc=0):
     print("Disconnected result code " + str(rc))
 
-def on_message(client, userdata, msg):
-    m_decode = str(msg.payload.decode("utf-8"))
-    print("message received", m_decode)
-    print("message topic=", msg.topic)
-    print("message qos", msg.qos)
-    print("message retain flag=", msg.retain)
+def on_publish(client,userdata,result):
+    print("Data published ", result)
 
 def get_cpu_temp():
     result = 0.0
@@ -42,24 +41,29 @@ def get_cpu_temp():
         with open(path) as f:
             line = f.readline().strip()
         if line.isdigit():
-            result = float(line) / 1000
+            result = float( int( float(line) / 100 ) / 10) # funky rounding to 000.0 format
     return result
 
+#start
+print("=== starting pi-sensors ===")
 
 # tests
+print("= tests =")
 print("cpu temp: ", get_cpu_temp())
+print("= tests complete =")
 
 ################
 ## mqtt setup ##
 ################
 
 # init
+print("= initialise mqtt =")
 client = mqtt.Client( "ruiner-stats" )
 client.username_pw_set( env_user, env_pass )
 client.on_connect=on_connect
 client.on_disconnect=on_disconnect
 client.on_log=on_log
-client.on_message=on_message
+#client.on_publish=on_publish
 
 # connect
 print("connecting to broker ", env_broker)
@@ -69,13 +73,15 @@ client.loop_start()
 time.sleep(2)
 
 # loop
+print("= begin program loop =")
 while True:
     temperature = get_cpu_temp()
-    ret = client.publish("ruiner/cpu/temperature", temperature, 0, True)
-    print("publish return=", ret)
+    print("publishing ", env_cpu_temp_topic, " = ", temperature, " ...")
+    client.publish(env_cpu_temp_topic, temperature, env_qos, True)
     time.sleep(60*5)
 
 # disconnect
+print("= begin program termination =")
 time.sleep(4)
 print("Disconnecting from broker...")
 client.loop_stop()

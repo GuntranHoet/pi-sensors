@@ -4,6 +4,12 @@ FROM python:3
 LABEL maintainer="GunTheHuman"
 LABEL build_version="0.1"
 
+ENV BROKER=localhost
+ENV USERNAME=""
+ENV PASSWORD=""
+ENV QOS=0
+ENV CPU_TEMP_TOPIC="pi/cpu/temperature"
+
 # set the working directory in the container
 WORKDIR /usr/docker/pi-sensors
 
